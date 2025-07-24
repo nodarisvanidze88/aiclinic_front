@@ -1,0 +1,50 @@
+name: Build & Deploy (Frontend)
+
+on:
+    push:
+        branches: [main]
+
+env:
+    IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/aiclinic-frontend:latest
+
+jobs:
+    build-push:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: write
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Log in to GHCR
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build & push image
+              uses: docker/build-push-action@v5
+              with:
+                  push: true
+                  tags: ${{ env.IMAGE_NAME }}
+
+    deploy:
+        runs-on: ubuntu-latest
+        needs: build-push
+        steps:
+            - name: Restart container on frontend droplet
+              uses: appleboy/ssh-action@v1
+              with:
+                  host: ${{ secrets.DO_FRONT_HOST }}
+                  username: ${{ secrets.DO_FRONT_USER }}
+                  password: ${{ secrets.DO_FRONT_PASS }}
+                  envs: IMAGE_NAME
+                  script: |
+                      docker stop aiclinic-front || true
+                      docker rm   aiclinic-front || true
+                      docker pull $IMAGE_NAME
+                      docker run  -d --name aiclinic-front \
+                                   --restart always \
+                                   -p 80:80 \
+                                   $IMAGE_NAME

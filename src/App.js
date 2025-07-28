@@ -101,7 +101,7 @@ export default function App() {
                     className="flex-1 resize-none rounded-md bg-gray-800 border border-gray-700
              px-3 py-2 text-sm text-white     /* <-- დაამატე text-white */
              focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="აკრიფეთ შეტყობინება…"
+                    placeholder="აკრიფეთ შეტყობინებააააა…"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                 />

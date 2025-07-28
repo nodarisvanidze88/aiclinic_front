@@ -26,6 +26,7 @@ jobs:
             - name: Build & push image
               uses: docker/build-push-action@v5
               with:
+                  context: .
                   push: true
                   tags: ${{ env.IMAGE_NAME }}
 
@@ -33,7 +34,7 @@ jobs:
         runs-on: ubuntu-latest
         needs: build-push
         steps:
-            - name: Restart container on frontend droplet
+            - name: Restart container on frontend droplet (network mode)
               uses: appleboy/ssh-action@v1
               with:
                   host: ${{ secrets.DO_FRONT_HOST }}
@@ -41,10 +42,24 @@ jobs:
                   password: ${{ secrets.DO_FRONT_PASS }}
                   envs: IMAGE_NAME
                   script: |
-                      docker stop aiclinic-front || true
-                      docker rm   aiclinic-front || true
+                      set -e
+                      # ensure shared network exists
+                      docker network create web || true
+
+                      # ensure caddy is attached to that network (safe if already)
+                      docker network connect web caddy || true
+
+                      # redeploy frontend
+                      docker rm -f aiclinic-front || true
                       docker pull $IMAGE_NAME
-                      docker run  -d --name aiclinic-front \
-                                   --restart always \
-                                   -p 8080:80 \
-                                   $IMAGE_NAME
+                      docker run -d --name aiclinic-front \
+                        --restart always \
+                        --network web \
+                        -p 8080:80 \
+                        $IMAGE_NAME
+
+                      # quick local health check (non-fatal)
+                      curl -sI http://127.0.0.1:8080/health || true
+
+                      # optional cleanup
+                      docker image prune -f || true

@@ -1,21 +1,27 @@
 # ---------- 1) Build React ----------
 FROM node:20-alpine AS build
 WORKDIR /app
-ENV NODE_ENV=production
+
+# Don't set NODE_ENV=production here — we need devDependencies to build
 COPY package*.json ./
 RUN npm ci
+
 COPY . .
-RUN npm run build
+RUN npm run build    # creates /app/build
 
 # ---------- 2) Minimal Nginx ----------
 FROM nginx:alpine
-# copy static files
+
+# Install a tiny HTTP client for the healthcheck
+RUN apk add --no-cache curl
+
+# Copy static files and vhost
 COPY --from=build /app/build /usr/share/nginx/html
-# replace default vhost with simple SPA config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# simple healthcheck (uses /health from your nginx.conf)
-HEALTHCHECK CMD wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || exit 1
+# Healthcheck hits the /health endpoint defined in nginx.conf
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -fsS http://127.0.0.1/health || exit 1
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

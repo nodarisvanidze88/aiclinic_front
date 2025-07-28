@@ -23,8 +23,7 @@ export default function App() {
 
         try {
             const res = await fetch(
-                process.env.REACT_APP_API_BASE_URL ||
-                    'http://api.aiclinic.bio:8000/api/chat',
+                process.env.REACT_APP_API_BASE_URL || '/api/chat',
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

@@ -18,6 +18,10 @@
 .env.test.local
 .env.production.local
 
+# Environment files (keep .env and .env.production as templates)
+# .env.local is for local development overrides
+# .env.production is a template for CI/CD
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

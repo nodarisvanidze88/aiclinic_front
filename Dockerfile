@@ -2,6 +2,18 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Accept build arguments for environment variables
+ARG REACT_APP_API_BASE_URL=https://api.aiclinic.bio
+ARG REACT_APP_ENVIRONMENT=production
+ARG REACT_APP_APP_NAME=AIClinic
+ARG REACT_APP_VERSION=1.0.0
+
+# Set environment variables for React build
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
+ENV REACT_APP_ENVIRONMENT=$REACT_APP_ENVIRONMENT
+ENV REACT_APP_APP_NAME=$REACT_APP_APP_NAME
+ENV REACT_APP_VERSION=$REACT_APP_VERSION
+
 # Don't set NODE_ENV=production here — we need devDependencies to build
 COPY package*.json ./
 RUN npm ci
